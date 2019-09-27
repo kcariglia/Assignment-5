@@ -130,6 +130,7 @@
 ; test cases:
 (check-expect (depth A1 (make-db widget-quantity < = false)) 0)
 (check-expect (depth Z1 (make-db widget-quantity < = BST-W1)) 2)
+(check-expect (depth A1 (make-db widget-quantity < = BST-W1)) 2)
 
 
 (define (depth x db)
@@ -155,6 +156,7 @@
 ; signature: (listof Widget) db -> time
 ; purpose: returns time taken to use insert! function with list of widgets and a db
 ; test cases:
+;(check-expect (time (foldl (insert! widget-list10k DB-
 
 ;YOU NEED A TODO ACCUMULATOR
 ;(define (time low db)
@@ -167,3 +169,20 @@
 ; test cases:
 
 ; need the insert function from part 2
+
+(define (insert k db)
+  (local [(define b (db-bst db))
+          (define smaller? (db-lt? db))
+          (define field (db-field db))
+          (define (insert-k k bst)
+  (cond
+    [(false? bst) (make-bst k false false)]
+    [(smaller? (field k) (field (bst-widget bst)))
+     (make-bst (bst-widget bst)
+               (insert-k k (bst-left bst)) 
+               (bst-right bst))]
+    [else
+     (make-bst (bst-widget bst)
+               (bst-left bst)
+               (insert-name k (bst-right bst)))]))]
+    (make-db (db-field DB-quantity) (db-lt? DB-quantity) (db-eq? DB-quantity) (insert-k k b))))

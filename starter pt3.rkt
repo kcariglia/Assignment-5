@@ -130,26 +130,25 @@
 ; purpose: consumes a value to look for in the DB, and returns the depth of the node it finds
 ; test cases:
 (check-expect (depth A1 (make-db widget-quantity < = false)) 0)
-(check-expect (depth Z1 (make-db widget-quantity < = BST-W1)) 2)
+(check-expect (depth Z1 (make-db widget-quantity < = BST-W1)) 1)
 (check-expect (depth A1 (make-db widget-quantity < = BST-W1)) 2)
 
 
 (define (depth x db)
-  (local [(define (depth x0 db0 b a)      
-            (cond
-              [(false? b) a]
-              [((db-lt? db0) ((db-field db) x0) ((db-field db) (bst-widget b)))
-               (depth x0 db0 (bst-left b) (add1 a))]
-              [else
-               (depth x0 db0 (bst-right b) (add1 a))]))] (depth x db (db-bst db) 0)))
-
+  (local [
+          (define (depth0 x0 db0 a)
+            (cond [(false? (db-bst db0)) a]
+              [((db-eq? db0) ((db-field db0) x0) ((db-field db0) (bst-widget (db-bst db0)))) a]
+              [((db-lt? db0) ((db-field db0) x0) ((db-field db0) (bst-widget (db-bst db0)))) (depth0 x0 (make-db (db-field db0) (db-lt? db0) (db-eq? db0) (bst-left (db-bst db0))) (add1 a))]
+              [else (depth0 x0 (make-db (db-field db0) (db-lt? db0) (db-eq? db0) (bst-right (db-bst db0))) (add1 a))]))] (depth0 x db 0)))
+ 
 
 ; function: avg-depth
 ; signature: (listof widget) db -> number
 ; purpose: for every element of the list compute its depth in the tree, and then take the average
 
 (define (avg-depth low db)
-  (mean (foldr depth db low)))
+  (mean (map (lambda (x) (depth x db)) low)))
 
 
 ; function: time0

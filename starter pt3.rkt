@@ -115,13 +115,13 @@
       true
       (<= (abs (height-diff b)) 1)))
 
-
 ; widget lists
-(define widget-list10k (random-widgets 10000 99999))
-(define widget-list30k (random-widgets 30000 99999))
-(define widget-list100k (random-widgets 100000 999999))
-(define widget-list300k (random-widgets 300000 999999))
-(define widget-list1m (random-widgets 1000000 9999999))
+
+;(define widget-list10k (random-widgets 10000 99999))
+;(define widget-list30k (random-widgets 30000 99999))
+;(define widget-list100k (random-widgets 100000 999999))
+;(define widget-list300k (random-widgets 300000 999999))
+;(define widget-list1m (random-widgets 1000000 9999999))
 
 
 ; function: depth
@@ -130,20 +130,16 @@
 ; test cases:
 (check-expect (depth A1 (make-db widget-quantity < = false)) 0)
 (check-expect (depth Z1 (make-db widget-quantity < = BST-W1)) 2)
-(check-expect (depth A1 (make-db widget-quantity < = BST-W1)) 2)
 
 
 (define (depth x db)
   (local [(define (depth x0 db0 b a)      
-  (cond
-    [(false? b) a]
-    [((db-lt? db0) ((db-field db) x0) ((db-field db) (bst-widget b)))
-     (depth x0 db0 (bst-left b) (add1 a))]
-    [else
-     (depth x0 db0 (bst-right b) (add1 a))]))] (depth x db (db-bst db) 0)))
-
-    
-
+            (cond
+              [(false? b) a]
+              [((db-lt? db0) ((db-field db) x0) ((db-field db) (bst-widget b)))
+               (depth x0 db0 (bst-left b) (add1 a))]
+              [else
+               (depth x0 db0 (bst-right b) (add1 a))]))] (depth x db (db-bst db) 0)))
 
 ; function: avg-depth
 ; signature: (listof widget) db -> number
@@ -156,33 +152,42 @@
 ; signature: (listof Widget) db -> time
 ; purpose: returns time taken to use insert! function with list of widgets and a db
 ; test cases:
-;(check-expect (time (foldl (insert! widget-list10k DB-
 
 ;YOU NEED A TODO ACCUMULATOR
 ;(define (time low db)
- ; (time (insert! (first low) db)
+; (time (insert! (first low) db)
 
 
 ; function: insert!
 ; signature: Widget DB → DB
 ; purpose: Inserts a widget into the database’s BST.  The function will need to return a database with the updated BST
 ; test cases:
+(check-expect (db-bst (insert! A1 DB-quantity)) (db-bst (make-db (db-field DB-quantity) (db-lt? DB-quantity) (db-eq? DB-quantity) (make-bst A1 false false))))
+(set-db-bst! DB-quantity false)
+(check-expect (db-bst (insert! W1 DB-quantity)) (db-bst (make-db widget-quantity < = (make-bst Z1 BST-A1 false))))
+(check-expect (db-bst (insert! Z1 DB-quantity)) (db-bst (make-db widget-quantity < = (make-bst A1 false BST-Z1))))
 
-; need the insert function from part 2
-
-(define (insert k db)
+(define (insert! k db)
+  (begin
   (local [(define b (db-bst db))
           (define smaller? (db-lt? db))
           (define field (db-field db))
-          (define (insert-k k bst)
-  (cond
-    [(false? bst) (make-bst k false false)]
-    [(smaller? (field k) (field (bst-widget bst)))
-     (make-bst (bst-widget bst)
-               (insert-k k (bst-left bst)) 
-               (bst-right bst))]
-    [else
-     (make-bst (bst-widget bst)
-               (bst-left bst)
-               (insert-name k (bst-right bst)))]))]
-    (make-db (db-field DB-quantity) (db-lt? DB-quantity) (db-eq? DB-quantity) (insert-k k b))))
+          (define (insert-k bst acc)
+            (cond
+              [(false? bst)
+               (if (false? acc)
+                   (set-db-bst! db (make-bst k false false))
+                   (if (smaller? (field (bst-widget acc)) (field k))
+                       (set-bst-left! acc (make-bst k false false))
+                       (set-bst-right! acc (make-bst k false false))))]
+              [(smaller? (field k) (field (bst-widget bst)))
+               (make-bst (bst-widget bst)
+                         (insert-k (bst-left bst) bst) 
+                         (bst-right bst)) ]
+              [else
+               (make-bst (bst-widget bst)
+                         (bst-left bst)
+                         (insert-k (bst-right bst) bst))]))]
+    (make-db (db-field DB-quantity) (db-lt? DB-quantity) (db-eq? DB-quantity) (insert-k b false))) db))
+
+; need the insert function from part 2
